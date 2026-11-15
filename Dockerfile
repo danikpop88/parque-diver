@@ -25,6 +25,10 @@ RUN printf '<VirtualHost *:80>\n    DocumentRoot /var/www/html/public\n    <Dire
 RUN printf '<IfModule mpm_prefork_module>\n    StartServers 2\n    MinSpareServers 2\n    MaxSpareServers 4\n    MaxRequestWorkers 10\n</IfModule>\n' > /etc/apache2/conf-available/tuning.conf \
     && a2enconf tuning
 
+# Configuración de producción de PHP: los errores van a los logs y no se imprimen dentro de la respuesta
+# (si se imprimieran, dañarían los archivos PDF)
+RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
 # Permite subir imágenes de hasta 5 MB
 RUN printf 'upload_max_filesize=5M\npost_max_size=8M\n' > /usr/local/etc/php/conf.d/uploads.ini
 
@@ -33,7 +37,7 @@ COPY . .
 COPY --from=assets /app/public/build ./public/build
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress \
-    && mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs storage/fonts bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
 COPY start.sh /usr/local/bin/start.sh
